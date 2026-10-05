@@ -1,4 +1,5 @@
 import HttpServer from './http-server.js'
+import { closeRedis, initRedis } from './infrastructure/redis/redis.js'
 import { getAllControllers } from './presentation/controllers/index.js'
 import { getEnv } from './shared/config/env-manager.js'
 import Logger from './shared/logger.js'
@@ -9,6 +10,9 @@ const logger = new Logger('App')
 const main = async (): Promise<void> => {
   logger.info(`⚙️ Environment: ${getEnv('NODE_ENV')}`)
   logger.info(`🆔 Worker PID: ${process.pid}`)
+
+  /* Initialize Redis (RedisClient logs the connection) */
+  await initRedis(getEnv('REDIS_URL'))
 
   /* Create instance of Server */
   const httpServer = new HttpServer({
@@ -52,6 +56,11 @@ const main = async (): Promise<void> => {
 
     /* Close server */
     await httpServer.stop()
+
+    /* Close Redis */
+    await closeRedis()
+
+    logger.info('📦 Database disconnected')
 
     logger.info('😴 Server shutdown completed gracefully')
     process.exit(0)

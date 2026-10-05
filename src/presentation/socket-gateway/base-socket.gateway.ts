@@ -1,4 +1,8 @@
 import type { Namespace, Server, Socket } from 'socket.io'
+import OnlineUsersStore from '../../infrastructure/redis/online-users.store.js'
+import Logger from '../../shared/logger.js'
+
+const logger = new Logger('Socket')
 
 export type NextFn = (err?: Error) => void
 
@@ -16,6 +20,9 @@ export abstract class SocketGateway {
 
     this.nsp = io.of(this.namespace)
 
+    // --> Created here (not as a field) so the gateway can be instantiated before initRedis()
+    const onlineUsers = new OnlineUsersStore()
+
     /* Authentication middleware */
     this.nsp.use((socket, next) => this.authenticate(socket, next))
 
@@ -23,13 +30,25 @@ export abstract class SocketGateway {
     this.nsp.on('connection', (socket) => {
       const { userId } = socket.data
 
-      /* Set personal room for this user (set socket.data.userId in authenticate) */
+      /* Set personal room and track online status (set socket.data.userId in authenticate) */
       if (userId) {
         socket.join(`userId:${userId}`)
+        onlineUsers.add(userId).catch((error: Error) => {
+          logger.error('Failed to track online user', error, { userId })
+        })
       }
 
       /* Disconnect */
-      socket.on('disconnect', (reason) => this.onDisconnect(socket, reason))
+      socket.on('disconnect', (reason) => {
+        if (userId) {
+          onlineUsers.remove(userId).catch((error: Error) => {
+            logger.error('Failed to untrack online user', error, { userId })
+          })
+        }
+
+        this.onDisconnect(socket, reason)
+      })
+
       this.onConnection(socket)
     })
   }
