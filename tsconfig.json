@@ -4,10 +4,12 @@
   "compilerOptions": {
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "preserve",
     "target": "esnext",
     "lib": ["esnext"],
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "noEmit": true,
 
     // Stricter Typechecking Options
@@ -28,7 +30,9 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }
