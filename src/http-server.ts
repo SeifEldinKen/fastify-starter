@@ -1,6 +1,9 @@
 import type { Server } from 'node:http'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
 import GlobalErrorHandler from './presentation/global-error.handler.js'
+import Logger from './shared/logger.js'
+
+const logger = new Logger('HTTP')
 
 export interface RouteModule {
   plugin: FastifyPluginAsync
@@ -22,8 +25,8 @@ export default class HttpServer {
   private isRunning = false
 
   constructor(private readonly options: AppServerOptions) {
+    // --> Fastify's own logger stays off (request.log is a no-op), log with shared/logger instead
     this.app = Fastify({
-      logger: options.logger ?? true,
       forceCloseConnections: 'idle',
     })
 
@@ -34,7 +37,7 @@ export default class HttpServer {
 
   private registerMiddlewares(): void {
     this.app.addHook('onRequest', async (request) => {
-      request.log.debug({ url: request.url }, 'incoming request')
+      logger.debug('incoming request', { method: request.method, url: request.url })
     })
   }
 

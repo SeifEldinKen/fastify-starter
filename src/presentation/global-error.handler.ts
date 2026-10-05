@@ -1,5 +1,8 @@
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { ZodError } from 'zod'
+import Logger from '../shared/logger.js'
+
+const logger = new Logger('HTTP')
 
 export default class GlobalErrorHandler {
   constructor() {}
@@ -65,7 +68,7 @@ export default class GlobalErrorHandler {
     request: FastifyRequest,
     reply: FastifyReply,
   ): FastifyReply {
-    request.log.error(error)
+    logger.error('Request failed', error, { method: request.method, url: request.url })
     return reply.code(statusCode).send({ error: 'Internal Server Error' })
   }
 

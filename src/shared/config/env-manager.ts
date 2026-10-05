@@ -33,7 +33,7 @@ const loadEnv = (): Env => {
 
   // --> Check if env variables are valid
   if (result.success === false) {
-    // TODO: log
+    // --> console, not logger: the logger reads NODE_ENV from here, so it can't exist before env is valid
     console.error(`Invalid environment variables:\n${z.prettifyError(result.error)}`)
 
     process.exit(1)
