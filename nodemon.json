@@ -1,0 +1,9 @@
+{
+  "watch": ["src/**/*", ".env", "package.json", "tsconfig.json"],
+  "exec": "tsx src/main.ts",
+  "ext": "ts, js, json",
+  "events": {
+    "restart": "echo 🔄 Restarting...",
+    "crash": "echo ❌ Server crashed!"
+  }
+}

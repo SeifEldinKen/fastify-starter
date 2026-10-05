@@ -1,0 +1,36 @@
+{
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm typecheck && tsdown",
+    "start:dev": "cross-env NODE_ENV=development nodemon",
+    "start:prod": "cross-env NODE_ENV=stage node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "^26.6.3",
+    "cross-env": "^10.1.0",
+    "node-notifier-cli": "^2.0.0",
+    "nodemon": "^3.1.14",
+    "tsdown": "^0.23.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "dotenv": "^18.0.4",
+    "fastify": "^5.12.5",
+    "hono": "^4.13.9",
+    "ioredis": "^6.0.0",
+    "socket.io": "^4.8.4",
+    "zod": "^4.6.5"
+  }
+}
