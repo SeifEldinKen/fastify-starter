@@ -31,7 +31,10 @@ export default class HttpServer {
     })
 
     this.registerMiddlewares()
+
+    /* Register routes */
     this.registerRoutes(options.routes ?? [])
+
     this.registerErrorHandlers()
   }
 
