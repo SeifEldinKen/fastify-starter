@@ -21,9 +21,27 @@ const envSchema = z.object({
   HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(4618),
 
   /* DATABASE */
+  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
 
   /* REDIS */
   REDIS_URL: z.url({ protocol: /^rediss?$/ }).default('redis://localhost:6379'),
+
+  /* AUTH */
+  // --> Two different secrets, so a refresh token can never be verified as an access token
+  JWT_ACCESS_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
+
+  // --> bcrypt cost: each +1 doubles the hashing time (12 ≈ 250ms), safe to change, old hashes keep working
+  BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
+  // --> Never change or lose it: every stored password becomes unverifiable
+  PASSWORD_PEPPER: z.string().min(32),
+
+  /* ENCRYPTION */
+  // --> 32 random bytes in base64, encrypts the servers' SSH keys
+  // never lose it: every stored key becomes unreadable
+  ENCRYPTION_KEY: z.string().refine((value) => Buffer.from(value, 'base64').length === 32, {
+    error: 'Must be 32 bytes encoded as base64',
+  }),
 })
 
 export type Env = Readonly<z.infer<typeof envSchema>>
