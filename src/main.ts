@@ -1,4 +1,5 @@
 import HttpServer from './http-server.js'
+import { checkDatabaseConnection, prismaDb } from './infrastructure/database/prisma.js'
 import { closeRedis, initRedis } from './infrastructure/redis/redis.js'
 import { getAllControllers } from './presentation/controllers/index.js'
 import { getEnv } from './shared/config/env-manager.js'
@@ -11,7 +12,10 @@ const main = async (): Promise<void> => {
   logger.info(`⚙️ Environment: ${getEnv('NODE_ENV')}`)
   logger.info(`🆔 Worker PID: ${process.pid}`)
 
-  /* Initialize Redis (RedisClient logs the connection) */
+  /* Check database connection */
+  await checkDatabaseConnection()
+
+  /* Initialize Redis */
   await initRedis(getEnv('REDIS_URL'))
 
   /* Create instance of Server */
@@ -20,7 +24,7 @@ const main = async (): Promise<void> => {
     routes: getAllControllers(),
     prefix: '/api/v1',
     onError: (error) => {
-      logger.error('Server error', error)
+      logger.error(`💥 Uncaught server error: ${error instanceof Error ? error.message : String(error)}`, error)
     },
   })
 
@@ -60,6 +64,8 @@ const main = async (): Promise<void> => {
     /* Close Redis */
     await closeRedis()
 
+    /* Disconnect from database */
+    await prismaDb.$disconnect()
     logger.info('📦 Database disconnected')
 
     logger.info('😴 Server shutdown completed gracefully')
@@ -71,9 +77,6 @@ const main = async (): Promise<void> => {
 }
 
 main().catch((error) => {
-  logger.fatal(
-    `💥 Failed to start application: ${error instanceof Error ? error.message : String(error)}`,
-    error,
-  )
+  logger.fatal(`💥 Failed to start application: ${error instanceof Error ? error.message : String(error)}`, error)
   process.exit(1)
 })
