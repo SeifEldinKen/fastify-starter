@@ -34,5 +34,5 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["src", "*.config.ts"]
 }

@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import type { RouteModule } from '../../http-server.js'
+import ValidationError from '../../shared/errors/validation.error.js'
 
 export default abstract class BaseController {
   // --> URL prefix shared by all routes of the controller (e.g. '/users')
@@ -48,7 +49,7 @@ export default abstract class BaseController {
     const result = schema.safeParse(data)
 
     if (result.success === false) {
-      throw Object.assign(new Error(z.prettifyError(result.error)), { statusCode: 400 })
+      throw new ValidationError(z.prettifyError(result.error))
     }
 
     return result.data

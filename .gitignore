@@ -143,3 +143,9 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 dist/
+
+/src/generated/prisma
+
+# AI
+.agents
+.claude
