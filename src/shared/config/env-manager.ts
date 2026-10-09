@@ -20,6 +20,10 @@ const envSchema = z.object({
   /* HTTP */
   HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(4618),
 
+  /* METRICS */
+  // --> Sent by Prometheus on every scrape, /metrics is not served at all when it is missing
+  METRICS_TOKEN: z.string().min(32).optional(),
+
   /* DATABASE */
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
 
@@ -30,6 +34,9 @@ const envSchema = z.object({
   // --> Two different secrets, so a refresh token can never be verified as an access token
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
+  // --> In seconds: 15 minutes and 30 days
+  JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(2_592_000),
 
   // --> bcrypt cost: each +1 doubles the hashing time (12 ≈ 250ms), safe to change, old hashes keep working
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),

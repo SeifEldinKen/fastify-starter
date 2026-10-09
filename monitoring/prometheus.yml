@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # --> The app runs on the host, outside Docker: host.docker.internal reaches it from the container
+  # one target per running instance, keep the port in sync with HTTP_PORT
+  - job_name: server-panel
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/metrics-token
+    static_configs:
+      - targets: ['host.docker.internal:4619']

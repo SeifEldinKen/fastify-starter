@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { getEnv } from '../../../shared/config/env-manager.js'
-import type { Hasher } from './hashing.types.js'
+import type { CompareRequest, Hasher, HashRequest } from './hashing.types.js'
 
 // --> Hashes and checks user passwords (bcrypt + pepper), not meant for anything else
 export default class BcryptPasswordService implements Hasher {
@@ -10,12 +10,12 @@ export default class BcryptPasswordService implements Hasher {
     private readonly pepper: string = getEnv('PASSWORD_PEPPER'),
   ) {}
 
-  public hash(password: string): Promise<string> {
-    return bcrypt.hash(this.applyPepper(password), this.saltRounds)
+  public hash({ value }: HashRequest): Promise<string> {
+    return bcrypt.hash(this.applyPepper(value), this.saltRounds)
   }
 
-  public compare(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(this.applyPepper(password), hash)
+  public compare({ value, hash }: CompareRequest): Promise<boolean> {
+    return bcrypt.compare(this.applyPepper(value), hash)
   }
 
   // --> The pepper lives in .env, not in the database: a leaked database alone is not enough to guess passwords

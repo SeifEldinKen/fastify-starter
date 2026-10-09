@@ -1,38 +1,61 @@
-import HttpServer from './http-server.js'
-import { checkDatabaseConnection, prismaDb } from './infrastructure/database/prisma.js'
-import { closeRedis, initRedis } from './infrastructure/redis/redis.js'
-import { getAllControllers } from './presentation/controllers/index.js'
-import { getEnv } from './shared/config/env-manager.js'
-import Logger from './shared/logger.js'
-import { SocketServer } from './socket-server.js'
+import closeWithGrace from 'close-with-grace'
+import HttpServer from '@/http-server'
+import { checkDatabaseConnection, prismaDb } from '@/infrastructure/database/prisma'
+import { closeRedis, initRedis } from '@/infrastructure/redis/redis'
+import { getAllControllers } from '@/presentation/controllers'
+import OrganizationsGateway from '@/presentation/socket-gateway/organizations.gateway'
+import { getEnv } from '@/shared/config/env-manager'
+import Logger from '@/shared/logger'
+import { SocketServer } from '@/socket-server'
+
+const SHUTDOWN_TIMEOUT_MS = 10_000
 
 const logger = new Logger('App')
 
-const main = async (): Promise<void> => {
+const bootstrap = async (): Promise<void> => {
   logger.info(`⚙️ Environment: ${getEnv('NODE_ENV')}`)
   logger.info(`🆔 Worker PID: ${process.pid}`)
 
   /* Check database connection */
   await checkDatabaseConnection()
 
-  /* Initialize Redis */
+  /* Initialize Redis (shared client + subscriber) */
   await initRedis(getEnv('REDIS_URL'))
+
+  const metricsToken = getEnv('METRICS_TOKEN')
 
   /* Create instance of Server */
   const httpServer = new HttpServer({
+    host: '0.0.0.0',
     port: getEnv('HTTP_PORT'),
     routes: getAllControllers(),
-    prefix: '/api/v1',
-    onError: (error) => {
-      logger.error(`💥 Uncaught server error: ${error instanceof Error ? error.message : String(error)}`, error)
+    prefix: {
+      path: '/api/v1',
+      exclude: [
+        /* Registered without the global prefix */
+        '/healthz',
+      ],
     },
+    ...(getEnv('NODE_ENV') !== 'production' && {
+      docs: {
+        title: 'Server Panel API',
+        version: '1.0.0',
+      },
+    }),
+    ...(metricsToken && {
+      metrics: {
+        token: metricsToken,
+      },
+    }),
   })
 
   /* Create instance of SocketServer */
-  // --> Bind gateways before start() so emits never hit an unbound namespace
-  new SocketServer(httpServer.getServer(), [
-    /* Add gateways */
-  ])
+  const socketServer = new SocketServer(httpServer.getServer(), {
+    gateways: [
+      /* Add gateways */
+      new OrganizationsGateway(),
+    ],
+  })
 
   /* Start server */
   await httpServer.start().then(() => {
@@ -43,40 +66,37 @@ const main = async (): Promise<void> => {
     logger.info(`📚 Docs available at: ${baseUrl}/docs`)
   })
 
-  let isShuttingDown = false
-
-  // --> Graceful shutdown: finish in-flight requests before exiting
-  const shutdown = async (signal: NodeJS.Signals) => {
-    logger.info(`🛑 Process ${process.pid} received ${signal}`)
-
-    if (isShuttingDown) {
-      logger.warn('⚠️ Shutdown already in progress, ignoring duplicate signal')
-      return
+  // --> Graceful shutdown on SIGINT, SIGTERM, uncaught exception and unhandled rejection
+  closeWithGrace({ delay: SHUTDOWN_TIMEOUT_MS, logger: false }, async ({ signal, err }) => {
+    if (err) {
+      logger.error(`💥 Uncaught error: ${err.message}`, err)
     }
 
-    isShuttingDown = true
+    logger.info(`🔄 Starting graceful shutdown... ${signal ?? ''}`)
 
-    logger.info('🔄 Starting graceful shutdown...')
+    /* Disconnect sockets: open WebSockets would block the HTTP close until the timeout */
+    await socketServer.disconnectAll()
+    logger.info('🔌 Sockets disconnected')
 
-    /* Close server */
+    /* Close HTTP server */
     await httpServer.stop()
 
-    /* Close Redis */
+    /* Close Socket.IO: unsubscribes the adapter, so Redis must still be up */
+    await socketServer.close()
+
+    /* Close Redis (nothing uses it anymore) */
     await closeRedis()
+    logger.info('📦 Redis disconnected')
 
     /* Disconnect from database */
     await prismaDb.$disconnect()
     logger.info('📦 Database disconnected')
 
     logger.info('😴 Server shutdown completed gracefully')
-    process.exit(0)
-  }
-
-  process.once('SIGINT', shutdown)
-  process.once('SIGTERM', shutdown)
+  })
 }
 
-main().catch((error) => {
+bootstrap().catch((error) => {
   logger.fatal(`💥 Failed to start application: ${error instanceof Error ? error.message : String(error)}`, error)
   process.exit(1)
 })

@@ -149,3 +149,5 @@ dist/
 # AI
 .agents
 .claude
+# Monitoring secrets (Prometheus scrape token)
+/monitoring/secrets

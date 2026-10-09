@@ -12,7 +12,10 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check .",
-    "check:fix": "biome check --write ."
+    "check:fix": "biome check --write .",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:migrate": "prisma migrate dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
@@ -30,12 +33,18 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@fastify/swagger": "^9.9.1",
     "@hono/node-server": "^2.1.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@prometheus-io/client": "^0.16.1",
+    "@scalar/fastify-api-reference": "^1.73.0",
+    "@socket.io/redis-adapter": "^8.3.0",
     "bcryptjs": "^3.0.3",
+    "close-with-grace": "^2.5.0",
     "dotenv": "^18.0.4",
     "fastify": "^5.12.5",
+    "fastify-type-provider-zod": "^7.0.0",
     "hono": "^4.13.9",
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",

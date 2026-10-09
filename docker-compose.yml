@@ -1,4 +1,24 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    # --> Development defaults, keep DATABASE_URL in sync when one of them changes
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-server_panel}
+    # --> Bound to localhost only: reachable from this machine, not from the network
+    # POSTGRES_HOST_PORT changes the host port if 5432 is taken (keep DATABASE_URL in sync)
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   redis:
     image: redis:8-alpine
     restart: unless-stopped
@@ -16,5 +36,40 @@ services:
       timeout: 3s
       retries: 5
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    # --> Bound to localhost only, PROMETHEUS_HOST_PORT changes the host port if 9090 is taken
+    ports:
+      - '127.0.0.1:${PROMETHEUS_HOST_PORT:-9090}:9090'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # --> Holds the token sent to the app's /metrics (same value as METRICS_TOKEN), not in git
+      - ./monitoring/secrets:/etc/prometheus/secrets:ro
+      - prometheus-data:/prometheus
+    # --> Docker Desktop has this name built in, Linux needs it mapped to the host
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      # --> Development default, set a real password anywhere else
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    # --> Bound to localhost only, GRAFANA_HOST_PORT changes the host port if 3000 is taken
+    ports:
+      - '127.0.0.1:${GRAFANA_HOST_PORT:-3000}:3000'
+    volumes:
+      # --> Data source and dashboards are loaded from files, nothing to click on first start
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
 volumes:
+  postgres-data:
   redis-data:
+  prometheus-data:
+  grafana-data:

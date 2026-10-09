@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  # --> Every .json file in this folder becomes a dashboard
+  - name: server-panel
+    folder: Server Panel
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

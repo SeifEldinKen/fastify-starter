@@ -7,9 +7,7 @@
     "module": "preserve",
     "target": "esnext",
     "lib": ["esnext"],
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "noEmit": true,
 
     // Stricter Typechecking Options
@@ -32,7 +30,12 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    // Path Aliases: "@/shared/logger.js" instead of "../../shared/logger.js"
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src", "*.config.ts"]
 }
