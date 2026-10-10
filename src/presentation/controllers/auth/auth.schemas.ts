@@ -56,6 +56,17 @@ export const loginSchema: FastifySchema = {
   },
 }
 
+/* LOGOUT */
+export const logoutSchema: FastifySchema = {
+  tags: TAGS,
+  summary: 'End the current session',
+  security: bearerAuth,
+  response: {
+    204: z.null().describe('Session ended'),
+    401: errorResponseSchema,
+  },
+}
+
 /* CURRENT USER */
 export const currentUserSchema: FastifySchema = {
   tags: TAGS,
