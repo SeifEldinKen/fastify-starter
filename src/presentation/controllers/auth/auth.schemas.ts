@@ -32,3 +32,15 @@ export const registerSchema: FastifySchema = {
   },
 }
 
+/* CURRENT USER */
+export const currentUserSchema: FastifySchema = {
+  tags: TAGS,
+  summary: 'Get the logged in user',
+  security: bearerAuth,
+  response: {
+    200: userSchema.extend({ isEmailVerified: z.boolean() }),
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+}
