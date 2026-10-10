@@ -32,6 +32,30 @@ export const registerSchema: FastifySchema = {
   },
 }
 
+/* LOGIN */
+const loginBody = z.object({
+  email: z.email().max(254).default('seifeldinrefaat@gmail.com'),
+  password: z.string().min(1).max(128).default('seaways22'),
+})
+
+export type LoginBody = z.infer<typeof loginBody>
+
+export const loginSchema: FastifySchema = {
+  tags: TAGS,
+  summary: 'Log in and open a session',
+  body: loginBody,
+  response: {
+    200: z.object({
+      accessToken: z.string(),
+      refreshToken: z.string(),
+      user: userSchema,
+    }),
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+  },
+}
+
 /* CURRENT USER */
 export const currentUserSchema: FastifySchema = {
   tags: TAGS,
