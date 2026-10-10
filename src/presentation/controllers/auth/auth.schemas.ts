@@ -74,6 +74,25 @@ export const forgotPasswordSchema: FastifySchema = {
   },
 }
 
+/* VERIFY RESET OTP */
+const verifyResetOtpBody = z.object({
+  email: z.email().max(254),
+  otp: z.string().regex(/^\d{6}$/, 'Must be 6 digits'),
+})
+
+export type VerifyResetOtpBody = z.infer<typeof verifyResetOtpBody>
+
+export const verifyResetOtpSchema: FastifySchema = {
+  tags: TAGS,
+  summary: 'Exchange a password reset code for a reset token',
+  body: verifyResetOtpBody,
+  response: {
+    200: z.object({ resetToken: z.string() }),
+    400: errorResponseSchema,
+    429: errorResponseSchema,
+  },
+}
+
 /* LOGOUT */
 export const logoutSchema: FastifySchema = {
   tags: TAGS,
