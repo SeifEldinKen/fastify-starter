@@ -56,6 +56,24 @@ export const loginSchema: FastifySchema = {
   },
 }
 
+/* FORGOT PASSWORD */
+const forgotPasswordBody = z.object({
+  email: z.email().max(254),
+})
+
+export type ForgotPasswordBody = z.infer<typeof forgotPasswordBody>
+
+export const forgotPasswordSchema: FastifySchema = {
+  tags: TAGS,
+  summary: 'Request a password reset code',
+  body: forgotPasswordBody,
+  response: {
+    200: z.object({ message: z.string() }).describe('Same answer whether the email is registered or not'),
+    400: errorResponseSchema,
+    429: errorResponseSchema,
+  },
+}
+
 /* LOGOUT */
 export const logoutSchema: FastifySchema = {
   tags: TAGS,
