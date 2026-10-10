@@ -93,6 +93,26 @@ export const verifyResetOtpSchema: FastifySchema = {
   },
 }
 
+/* RESET PASSWORD */
+const resetPasswordBody = z.object({
+  resetToken: z.string().min(1).max(1024),
+  newPassword: z.string().min(8).max(128),
+})
+
+export type ResetPasswordBody = z.infer<typeof resetPasswordBody>
+
+export const resetPasswordSchema: FastifySchema = {
+  tags: TAGS,
+  summary: 'Set a new password and end every session',
+  body: resetPasswordBody,
+  response: {
+    204: z.null().describe('Password changed'),
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    429: errorResponseSchema,
+  },
+}
+
 /* LOGOUT */
 export const logoutSchema: FastifySchema = {
   tags: TAGS,
