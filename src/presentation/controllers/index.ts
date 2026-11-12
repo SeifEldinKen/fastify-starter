@@ -1,5 +1,6 @@
 import type { RouteModule } from '../../http-server.js'
 import { getAuthControllers } from './auth/index.js'
+import { getFirewallControllers } from './firewall/index.js'
 import { getHealthzControllers } from './healthz/index.js'
 import { getOrganizationsControllers } from './organizations/index.js'
 import { getServersControllers } from './servers/index.js'
@@ -15,4 +16,5 @@ export const getAllControllers = (): RouteModule[] => [
   ...getServersControllers(),
   ...getSystemUsersControllers(),
   ...getServicesControllers(),
+  ...getFirewallControllers(),
 ]
