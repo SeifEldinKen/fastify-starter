@@ -15,7 +15,8 @@
     "check:fix": "biome check --write .",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx src/infrastructure/database/seed.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
