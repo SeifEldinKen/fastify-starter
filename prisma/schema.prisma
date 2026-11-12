@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String  @id @default(uuid())
+  platformRoleId String? // null = regular customer, set = member of the platform team
+
+  email             String    @unique
+  firstName         String
+  lastName          String
+  passwordHash      String
+  emailVerifiedAt   DateTime? // null = email not verified yet
+  passwordChangedAt DateTime? // null = never changed, tokens issued before it are rejected
+
+  blockedAt DateTime? // null = not blocked
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  /**
+   * Relationships
+   */
+  platformRole      PlatformRole?      @relation(fields: [platformRoleId], references: [id])
+  verificationCodes VerificationCode[]
+  credentials       ServerCredential[]
+  memberships       Membership[]
+  auditLogs         AuditLog[]
+  sessions          Session[]
+}
+
+model Session {
+  id     String @id @default(uuid())
+  userId String
+
+  refreshTokenHash String  @unique // SHA-256 of the token, never the token itself
+  userAgent        String?
+  ipAddress        String?
+
+  expiresAt  DateTime
+  revokedAt  DateTime? // logout or revoked from another device
+  lastUsedAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum VerificationPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model VerificationCode {
+  id     String @id @default(uuid())
+  userId String
+
+  purpose  VerificationPurpose
+  codeHash String // HMAC of "<userId>:<code>" with a server secret
+  attempts Int                 @default(0)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  roles       Role[]
+  servers     Server[]
+  auditLogs   AuditLog[]
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED // keeps the membership and its settings, but every request is rejected
+}
+
+model Membership {
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
+  roleId         String
+
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+
+  serverAccess ServerAccess[]
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role           @relation(fields: [roleId, organizationId], references: [id, organizationId])
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+/// Every organization owns its roles: the 4 default ones are created with the organization, custom ones later
+model Role {
+  id             String  @id @default(uuid())
+  organizationId String
+  key            String // stable identifier used by the code: "owner", "admin" ...
+  name           String // display name, free to change
+  description    String?
+  rank           Int // higher = more powerful, a member can only manage roles ranked below their own
+  isSystem       Boolean @default(false) // default role: synced from the code on every deploy, cannot be edited or deleted
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  RolePermission[]
+  memberships  Membership[]
+
+  @@unique([organizationId, key])
+  @@unique([id, organizationId]) // target of the composite key in Membership
+}
+
+/// Roles of the platform team (Super Admin, User Manager ...), never mixed with organization roles
+model PlatformRole {
+  id          String  @id @default(uuid())
+  key         String  @unique
+  name        String
+  description String?
+  rank        Int
+  isSystem    Boolean @default(false)
+
+  permissions PlatformRolePermission[]
+  users       User[]
+}
+
+model PlatformRolePermission {
+  platformRoleId String
+  permissionKey  String
+
+  platformRole PlatformRole @relation(fields: [platformRoleId], references: [id], onDelete: Cascade)
+  permission   Permission   @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+
+  @@id([platformRoleId, permissionKey])
+}
+
+/// Filled by the seed from src/shared/authorization/permissions.ts
+model Permission {
+  key         String @id // "file:view", "server:create", "platform:user:block" ...
+  description String
+
+  roles         RolePermission[]
+  platformRoles PlatformRolePermission[]
+}
+
+model RolePermission {
+  roleId        String
+  permissionKey String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+
+  @@id([roleId, permissionKey])
+}
+
+model Server {
+  id              String   @id @default(uuid())
+  organizationId  String
+  name            String
+  host            String
+  port            Int      @default(22)
+  hostFingerprint String? // saved on first connect, connection refused if it changes
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  credentials  ServerCredential[]
+  access       ServerAccess[]
+  auditLogs    AuditLog[]
+
+  @@index([organizationId])
+}
+
+model ServerCredential {
+  id                  String   @id @default(uuid())
+  serverId            String
+  userId              String?
+  username            String
+  privateKeyEncrypted String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([serverId, userId])
+}
+
+model ServerAccess {
+  membershipId String
+  serverId     String
+  createdAt    DateTime @default(now())
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  server     Server     @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@id([membershipId, serverId])
+  @@index([serverId])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String? // null = platform-level action (e.g. blocking a user)
+  userId         String?
+  serverId       String?
+  action         String // "file.delete", "system_user.create" ...
+  metadata       Json? // { path: "/var/www/a.txt" }
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  server       Server?       @relation(fields: [serverId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+}

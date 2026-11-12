@@ -15,7 +15,13 @@ export interface RefreshTokenPayload {
   sid: string
 }
 
-export type TokenPayload = AccessTokenPayload | RefreshTokenPayload
+// --> Issued after a valid password reset code, its jti is the id of that code
+export interface ResetTokenPayload {
+  type: 'reset'
+  sub: string
+}
+
+export type TokenPayload = AccessTokenPayload | RefreshTokenPayload | ResetTokenPayload
 
 export type VerifiedToken<T extends TokenPayload['type']> = Extract<TokenPayload, { type: T }> & {
   iat: number
