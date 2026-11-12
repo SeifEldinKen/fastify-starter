@@ -19,6 +19,10 @@ const envSchema = z.object({
 
   /* HTTP */
   HTTP_PORT: z.coerce.number().int().min(1).max(65535).default(4618),
+  // --> Addresses of the reverse proxy (nginx), comma separated IPs or CIDRs: '127.0.0.1' or '10.0.0.0/8'
+  // request.ip is read from X-Forwarded-For only when the request comes from them
+  // missing = no proxy. Behind nginx it must be set, or every client shares the ip of nginx and its rate limit
+  TRUST_PROXY: z.string().min(1).optional(),
 
   /* METRICS */
   // --> Sent by Prometheus on every scrape, /metrics is not served at all when it is missing
@@ -37,6 +41,11 @@ const envSchema = z.object({
   // --> In seconds: 15 minutes and 30 days
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(2_592_000),
+  // --> Signs the token returned after a valid password reset code, valid for 10 minutes
+  JWT_RESET_SECRET: z.string().min(32),
+  JWT_RESET_TTL_SECONDS: z.coerce.number().int().positive().default(600),
+  // --> HMAC key of the verification codes (OTP), changing it only invalidates the codes not used yet
+  VERIFICATION_CODE_SECRET: z.string().min(32),
 
   // --> bcrypt cost: each +1 doubles the hashing time (12 ≈ 250ms), safe to change, old hashes keep working
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),

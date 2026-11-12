@@ -48,8 +48,11 @@ export default class HttpServer {
 
   constructor(private readonly options: AppServerOptions) {
     // --> Fastify's own logger stays off (request.log is a no-op), log with shared/logger instead
+    const trustProxy = getEnv('TRUST_PROXY')
+
     this.app = Fastify({
       forceCloseConnections: 'idle',
+      ...(trustProxy && { trustProxy }),
       // --> Short id of the request, printed in its log line and returned in error responses
       genReqId: () => randomUUID().slice(0, 8),
     })
@@ -98,6 +101,11 @@ export default class HttpServer {
     // --> Scalar UI on top of that document
     this.app.register(scalarApiReference, {
       routePrefix: '/docs',
+    })
+
+    // --> The raw OpenAPI document, for tools that import it (Postman, code generators)
+    this.app.get('/docs.json', { schema: { hide: true } }, async () => {
+      return this.app.swagger()
     })
   }
 

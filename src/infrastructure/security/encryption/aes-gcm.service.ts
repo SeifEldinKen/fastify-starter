@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import { getEnv } from '../../../shared/config/env-manager.js'
 import DecryptionError from '../../../shared/errors/decryption.error.js'
-import type { Encryptor } from './encryption.types.js'
+import type { DecryptRequest, Encryptor, EncryptRequest } from './encryption.types.js'
 
 const ALGORITHM = 'aes-256-gcm'
 const KEY_VERSION = 'v1'
@@ -11,7 +11,7 @@ const AUTH_TAG_LENGTH = 16
 export default class AesGcmService implements Encryptor {
   constructor(private readonly key: Buffer = Buffer.from(getEnv('ENCRYPTION_KEY'), 'base64')) {}
 
-  public encrypt(plain: string): string {
+  public encrypt({ value }: EncryptRequest): string {
     // --> Random IV per call: encrypting the same value twice gives two different results
     const iv = randomBytes(IV_LENGTH)
 
@@ -21,7 +21,7 @@ export default class AesGcmService implements Encryptor {
 
     const ciphertext = Buffer.concat([
       /*  */
-      cipher.update(plain, 'utf8'),
+      cipher.update(value, 'utf8'),
       cipher.final(),
     ])
 
@@ -30,8 +30,8 @@ export default class AesGcmService implements Encryptor {
       .join(':')
   }
 
-  public decrypt(encrypted: string): string {
-    const [version, iv, authTag, ciphertext] = encrypted.split(':')
+  public decrypt({ value }: DecryptRequest): string {
+    const [version, iv, authTag, ciphertext] = value.split(':')
 
     if (version !== KEY_VERSION || !iv || !authTag || ciphertext === undefined) {
       throw new DecryptionError()

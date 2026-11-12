@@ -1,4 +1,5 @@
 import closeWithGrace from 'close-with-grace'
+import ServerMetricsCollector from '@/domain/use-cases/server-metrics/server-metrics.collector'
 import HttpServer from '@/http-server'
 import { checkDatabaseConnection, prismaDb } from '@/infrastructure/database/prisma'
 import { closeRedis, initRedis } from '@/infrastructure/redis/redis'
@@ -21,6 +22,10 @@ const bootstrap = async (): Promise<void> => {
 
   /* Initialize Redis (shared client + subscriber) */
   await initRedis(getEnv('REDIS_URL'))
+
+  /* Read the load of the connected servers in the background */
+  const serverMetricsCollector = new ServerMetricsCollector()
+  serverMetricsCollector.start()
 
   const metricsToken = getEnv('METRICS_TOKEN')
 
@@ -78,11 +83,15 @@ const bootstrap = async (): Promise<void> => {
     await socketServer.disconnectAll()
     logger.info('🔌 Sockets disconnected')
 
+    /* Stop reading the servers: it writes to Redis */
+    serverMetricsCollector.stop()
+
     /* Close HTTP server */
     await httpServer.stop()
 
     /* Close Socket.IO: unsubscribes the adapter, so Redis must still be up */
     await socketServer.close()
+    logger.info('🔌 Socket.IO disconnected')
 
     /* Close Redis (nothing uses it anymore) */
     await closeRedis()
