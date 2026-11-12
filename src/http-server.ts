@@ -102,6 +102,11 @@ export default class HttpServer {
     this.app.register(scalarApiReference, {
       routePrefix: '/docs',
     })
+
+    // --> The raw OpenAPI document, for tools that import it (Postman, code generators)
+    this.app.get('/docs.json', { schema: { hide: true } }, async () => {
+      return this.app.swagger()
+    })
   }
 
   private registerMiddlewares(): void {
