@@ -8,6 +8,7 @@ type SshConnectionErrorCode =
   | 'SSH_HOST_KEY_MISMATCH'
   | 'SSH_COMMAND_TIMEOUT'
   | 'SSH_COMMAND_FAILED'
+  | 'SYSTEMD_NOT_AVAILABLE'
 
 // --> 422, not 5xx: the client must see the code and message to fix the server settings
 export default class SshConnectionError extends BaseError {
