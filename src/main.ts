@@ -83,6 +83,7 @@ const bootstrap = async (): Promise<void> => {
 
     /* Close Socket.IO: unsubscribes the adapter, so Redis must still be up */
     await socketServer.close()
+    logger.info('🔌 Socket.IO disconnected')
 
     /* Close Redis (nothing uses it anymore) */
     await closeRedis()
