@@ -13,3 +13,17 @@ export const errorResponseSchema = z.object({
 
 // --> Routes behind EnsureAuthenticateHook add this to their schema
 export const bearerAuth = [{ bearerAuth: [] }]
+
+// --> Routes that run something as root on a server add this to their schema
+// the password is only sent by a client that got SUDO_PASSWORD_REQUIRED: it lives until the request ends, never saved
+// looseObject: every other header of the request is kept as it is
+export const sudoPasswordHeaders = z.looseObject({
+  'x-sudo-password': z
+    .string()
+    .min(1)
+    .max(256)
+    .optional()
+    .describe('Sudo password of the account used on the server, send it after a SUDO_PASSWORD_REQUIRED error'),
+})
+
+export type SudoPasswordHeaders = z.infer<typeof sudoPasswordHeaders>
