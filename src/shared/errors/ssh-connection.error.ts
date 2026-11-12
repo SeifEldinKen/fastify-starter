@@ -1,6 +1,13 @@
 import BaseError from './base.error.js'
 
-type SshConnectionErrorCode = 'SSH_UNREACHABLE' | 'SSH_AUTH_FAILED' | 'SSH_HOST_KEY_MISMATCH' | 'SSH_COMMAND_TIMEOUT'
+type SshConnectionErrorCode =
+  | 'SSH_UNREACHABLE'
+  | 'SSH_AUTH_FAILED'
+  | 'SSH_PASSWORD_AUTH_DISABLED'
+  | 'SSH_KEY_NOT_INSTALLED'
+  | 'SSH_HOST_KEY_MISMATCH'
+  | 'SSH_COMMAND_TIMEOUT'
+  | 'SSH_COMMAND_FAILED'
 
 // --> 422, not 5xx: the client must see the code and message to fix the server settings
 export default class SshConnectionError extends BaseError {
