@@ -42,6 +42,8 @@ export const ORGANIZATION_ROLES = {
       'service:view',
       'service:logs',
       'service:manage',
+      'firewall:view',
+      'firewall:manage',
       'audit-log:view',
     ],
   },
@@ -60,12 +62,13 @@ export const ORGANIZATION_ROLES = {
       'service:view',
       'service:logs',
       'service:manage',
+      'firewall:view',
     ],
   },
   viewer: {
     name: 'Viewer',
     rank: 10,
-    permissions: ['member:view', 'server:view', 'file:view', 'system-user:view', 'service:view'],
+    permissions: ['member:view', 'server:view', 'file:view', 'system-user:view', 'service:view', 'firewall:view'],
   },
 } as const satisfies Record<string, RoleDefinition<OrganizationPermission>>
 

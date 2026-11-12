@@ -34,6 +34,9 @@ export const PERMISSIONS = {
   'service:logs': { description: 'Read the logs of a service, they can hold secrets printed by the application' },
   'service:manage': { description: 'Start, stop and restart services, and change how they start at boot' },
 
+  'firewall:view': { description: 'View the firewall of a server and its rules' },
+  'firewall:manage': { description: 'Add and remove firewall rules, enable and disable the firewall' },
+
   'audit-log:view': { description: 'View the audit log' },
 
   /* PLATFORM */
