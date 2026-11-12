@@ -30,6 +30,10 @@ export const PERMISSIONS = {
   'system-user:view': { description: 'View Linux users' },
   'system-user:manage': { description: 'Create, edit and delete Linux users' },
 
+  'service:view': { description: 'View the services of a server' },
+  'service:logs': { description: 'Read the logs of a service, they can hold secrets printed by the application' },
+  'service:manage': { description: 'Start, stop and restart services, and change how they start at boot' },
+
   'audit-log:view': { description: 'View the audit log' },
 
   /* PLATFORM */
