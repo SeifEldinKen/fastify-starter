@@ -10,7 +10,8 @@ export default class ConflictError extends BaseError {
       | 'SERVER_ALREADY_EXISTS'
       | 'SYSTEM_USER_ALREADY_EXISTS'
       | 'FIREWALL_RULE_ALREADY_EXISTS'
-      | 'FIREWALL_CHANGE_IN_PROGRESS',
+      | 'FIREWALL_CHANGE_IN_PROGRESS'
+      | 'FILE_ALREADY_EXISTS',
     message: string,
   ) {
     super(message)
